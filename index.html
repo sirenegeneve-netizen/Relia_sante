@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relia Santé</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root{
+    --bg:#F2F8F7;
+    --surface:#FFFFFF;
+    --surface-2:#EAF4F2;
+    --ink:#122A28;
+    --ink-soft:#4E6D69;
+    --ink-faint:#8FA9A5;
+    --line:#DCEAE7;
+    --teal:#0E6E63;
+    --teal-deep:#0A4F47;
+    --teal-tint:#E3F2EE;
+    --mint:#59D18D;
+    --mint-tint:#E4F8ED;
+    --amber:#D98A2B;
+    --amber-tint:#FBF0DE;
+    --red:#C94C3F;
+    --red-tint:#FBEAE8;
+    --radius:18px;
+    --shadow:0 2px 6px rgba(18,42,40,.05), 0 14px 32px -16px rgba(18,42,40,.14);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ font-family:'Inter',sans-serif; background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; }
+  h1,h2,h3,.display{ font-family:'Space Grotesk',sans-serif; letter-spacing:-0.01em; }
+  button{ font-family:inherit; cursor:pointer; }
+
+  .app{ display:flex; min-height:100vh; }
+  .sidebar{ width:236px; flex-shrink:0; background:var(--surface); border-right:1px solid var(--line); display:flex; flex-direction:column; padding:26px 18px; position:sticky; top:0; height:100vh; }
+  .brand{ display:flex; align-items:center; gap:10px; padding:4px 6px 30px; }
+  .brand-mark{ width:34px; height:34px; border-radius:50%; background:var(--teal); color:#fff; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+  .brand-name{ font-family:'Space Grotesk'; font-weight:700; font-size:18px; color:var(--teal-deep); }
+
+  .nav{ list-style:none; display:flex; flex-direction:column; gap:4px; }
+  .nav button{ all:unset; display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:14px; font-size:14.5px; font-weight:500; color:var(--ink-soft); width:100%; }
+  .nav button:hover{ background:var(--surface-2); color:var(--ink); }
+  .nav button.active{ background:var(--teal); color:#fff; font-weight:600; }
+  .nav button .ic{ width:18px; text-align:center; font-size:16px; }
+
+  .sidebar-foot{ margin-top:auto; padding-top:16px; border-top:1px solid var(--line); }
+  .who{ display:flex; align-items:center; gap:10px; padding:8px 6px; }
+  .who-avatar{ width:38px; height:38px; border-radius:50%; background:var(--teal-tint); display:flex; align-items:center; justify-content:center; font-size:19px; }
+  .who-name{ font-size:13.5px; font-weight:700; color:var(--ink); }
+  .who-role{ font-size:11.5px; color:var(--ink-faint); }
+  .db-status{ font-size:10.5px; margin-top:8px; padding:6px 8px; border-radius:8px; display:flex; align-items:center; gap:6px; }
+  .db-status .dotstatus{ width:7px; height:7px; border-radius:50%; }
+  .db-ok{ background:var(--mint-tint); color:#1E8A54; } .db-ok .dotstatus{ background:var(--mint); }
+  .db-off{ background:var(--red-tint); color:#9C3B30; } .db-off .dotstatus{ background:var(--red); }
+
+  .main{ flex:1; min-width:0; padding:32px 40px 60px; max-width:1180px; }
+  .mobile-brand{ display:none; }
+
+  .section{ display:none; } .section.active{ display:block; }
+  .section-head{ margin-bottom:22px; }
+  .greeting{ font-size:30px; font-weight:700; }
+  .subtitle{ color:var(--ink-soft); font-size:14px; margin-top:6px; }
+  .eyebrow{ font-size:11px; text-transform:uppercase; letter-spacing:.09em; color:var(--teal); font-weight:700; margin-bottom:8px; }
+
+  .card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:22px; box-shadow:var(--shadow); }
+  .setup-banner{ background:var(--amber-tint); border:1px solid var(--amber); color:#7A5420; border-radius:14px; padding:14px 16px; font-size:13px; margin-bottom:18px; line-height:1.6; }
+  .setup-banner code{ background:rgba(0,0,0,.06); padding:1px 5px; border-radius:4px; }
+
+  .stay-card{ display:flex; gap:24px; align-items:center; margin-bottom:26px; position:relative; }
+  .stay-icon{ width:80px; height:110px; border-radius:16px; background:var(--teal-tint); display:flex; align-items:center; justify-content:center; font-size:32px; flex-shrink:0; }
+  .stay-badge{ position:absolute; top:0; right:0; background:var(--mint-tint); color:#1E8A54; font-size:11px; font-weight:700; padding:4px 12px; border-radius:20px; }
+  .stay-title{ font-size:19px; font-weight:700; }
+  .stay-sub{ color:var(--ink-faint); font-size:13px; margin-top:2px; }
+  .next-step{ display:flex; align-items:center; gap:8px; background:var(--surface-2); border-radius:12px; padding:10px 14px; margin-top:12px; font-size:13.5px; }
+  .next-dot{ width:8px; height:8px; border-radius:50%; background:var(--mint); flex-shrink:0; }
+
+  .btn{ background:var(--teal); color:#fff; border:none; padding:11px 20px; border-radius:24px; font-size:13.5px; font-weight:600; }
+  .btn:hover{ background:var(--teal-deep); }
+  .btn-mint{ background:var(--mint-tint); color:#1E8A54; }
+  .btn-mint:hover{ background:#CDEEDA; }
+  .btn-ghost{ background:transparent; border:1px solid var(--line); color:var(--ink); }
+  .btn-ghost:hover{ border-color:var(--teal); color:var(--teal); }
+  .btn-sm{ padding:8px 14px; font-size:12.5px; }
+  .btn-block{ width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; border-radius:14px; }
+
+  .grid{ display:grid; gap:16px; }
+  .grid-3{ grid-template-columns:repeat(3,1fr); }
+  .grid-2{ grid-template-columns:repeat(2,1fr); }
+  @media (max-width:900px){ .grid-3{ grid-template-columns:repeat(2,1fr); } }
+
+  .module-card{ all:unset; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:22px; text-align:left; box-shadow:var(--shadow); display:block; }
+  .module-card:hover{ border-color:var(--teal); transform:translateY(-2px); }
+  .module-icon{ width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:14px; }
+  .module-title{ font-weight:700; font-size:15px; }
+
+  .section-title{ font-size:24px; font-weight:700; margin-bottom:4px; }
+
+  .timeline{ display:flex; justify-content:space-between; margin:26px 0; flex-wrap:wrap; gap:16px; }
+  .tl-step{ display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; flex:1; min-width:110px; }
+  .tl-dot{ width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; border:2px solid var(--line); background:var(--surface); color:var(--ink-faint); }
+  .tl-step.done .tl-dot{ background:var(--mint-tint); border-color:var(--mint); color:#1E8A54; }
+  .tl-step.current .tl-dot{ background:var(--teal); border-color:var(--teal); color:#fff; }
+  .tl-label{ font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-soft); }
+  .tl-step.current .tl-label{ color:var(--teal); }
+  .tl-date{ font-size:11.5px; color:var(--ink-faint); }
+
+  .pro-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px; text-align:center; box-shadow:var(--shadow); }
+  .pro-avatar{ width:64px; height:64px; border-radius:50%; background:var(--teal-tint); display:flex; align-items:center; justify-content:center; font-size:28px; margin:0 auto 10px; position:relative; }
+  .pro-status{ position:absolute; bottom:2px; right:2px; width:12px; height:12px; border-radius:50%; border:2px solid var(--surface); }
+  .pro-status.on{ background:var(--mint); } .pro-status.off{ background:var(--ink-faint); }
+  .pro-name{ font-weight:700; font-size:14.5px; } .pro-role{ font-size:12px; color:var(--ink-faint); margin-bottom:12px; }
+
+  .ressenti-card{ background:linear-gradient(135deg, var(--teal-tint), var(--mint-tint)); border-radius:var(--radius); padding:26px; text-align:center; margin-top:20px; }
+  .ressenti-q{ font-style:italic; font-size:16px; color:var(--ink); margin-bottom:18px; }
+  .ressenti-opts{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+  .ressenti-btn{ all:unset; background:var(--surface); padding:12px 20px; border-radius:24px; font-size:13.5px; font-weight:600; box-shadow:var(--shadow); }
+  .ressenti-btn:hover{ background:var(--teal); color:#fff; }
+  .ressenti-log{ margin-top:14px; font-size:12px; color:var(--ink-faint); }
+
+  .chat-shell{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); display:flex; flex-direction:column; height:560px; }
+  .chat-header{ display:flex; align-items:center; gap:12px; padding:18px 22px; border-bottom:1px solid var(--line); }
+  .chat-log{ flex:1; overflow-y:auto; padding:22px; display:flex; flex-direction:column; gap:6px; }
+  .msg-row{ display:flex; flex-direction:column; margin-bottom:14px; max-width:70%; }
+  .msg-row.patient{ align-self:flex-end; align-items:flex-end; }
+  .msg-row.service{ align-self:flex-start; align-items:flex-start; }
+  .msg-bubble{ padding:12px 16px; border-radius:16px; font-size:13.5px; line-height:1.5; }
+  .msg-row.patient .msg-bubble{ background:var(--teal); color:#fff; border-bottom-right-radius:4px; }
+  .msg-row.service .msg-bubble{ background:var(--surface-2); color:var(--ink); border-bottom-left-radius:4px; }
+  .msg-time{ font-size:10.5px; color:var(--ink-faint); margin-top:5px; }
+  .chat-input-row{ display:flex; gap:10px; padding:16px 18px; border-top:1px solid var(--line); }
+  .chat-input-row input{ flex:1; border:1px solid var(--line); border-radius:24px; padding:12px 18px; font-size:13.5px; font-family:inherit; }
+  .chat-input-row input:focus{ outline:none; border-color:var(--teal); }
+  .send-btn{ all:unset; width:42px; height:42px; border-radius:50%; background:var(--teal); color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .chat-notice{ text-align:center; font-size:11px; color:var(--ink-faint); padding:0 18px 14px; }
+
+  .doc-stats{ display:flex; gap:14px; margin-bottom:18px; flex-wrap:wrap; }
+  .doc-stat{ background:var(--surface-2); border-radius:14px; padding:16px 20px; flex:1; min-width:160px; }
+  .doc-stat .n{ font-family:'Space Grotesk'; font-size:22px; font-weight:700; color:var(--teal-deep); }
+  .doc-stat .l{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+  .doc-stat.add{ display:flex; align-items:center; justify-content:center; gap:8px; border:2px dashed var(--line); background:transparent; font-weight:600; font-size:13px; color:var(--ink-soft); }
+  .doc-stat.add:hover{ border-color:var(--teal); color:var(--teal); }
+  .doc-filters{ display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+  .doc-filter{ all:unset; padding:8px 16px; border-radius:20px; font-size:12.5px; font-weight:600; background:var(--surface-2); color:var(--ink-soft); }
+  .doc-filter.active{ background:var(--teal); color:#fff; }
+  .doc-row{ display:flex; align-items:center; gap:16px; padding:18px; border:1px solid var(--line); border-radius:16px; margin-bottom:12px; background:var(--surface); }
+  .doc-icon{ width:44px; height:44px; border-radius:12px; background:var(--teal-tint); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+  .doc-title{ font-weight:700; font-size:14px; }
+  .doc-meta{ font-size:12px; color:var(--ink-faint); margin-top:2px; }
+  .doc-tag{ font-size:10px; font-weight:700; text-transform:uppercase; background:var(--surface-2); padding:2px 8px; border-radius:10px; margin-left:8px; }
+  .doc-actions{ margin-left:auto; display:flex; gap:10px; color:var(--ink-faint); }
+
+  .profile-card{ display:flex; align-items:center; gap:24px; margin-bottom:22px; flex-wrap:wrap; }
+  .profile-avatar{ width:88px; height:88px; border-radius:50%; background:var(--teal-tint); display:flex; align-items:center; justify-content:center; font-size:40px; }
+  .profile-name{ font-size:22px; font-weight:700; }
+  .profile-meta{ color:var(--ink-soft); font-size:13.5px; margin-top:6px; }
+  .settings-row{ display:flex; align-items:center; gap:16px; padding:18px 20px; border:1px solid var(--line); border-radius:16px; margin-bottom:12px; background:var(--surface); }
+  .settings-icon{ width:40px; height:40px; border-radius:12px; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:17px; }
+  .settings-title{ font-weight:700; font-size:14px; }
+  .settings-sub{ font-size:12px; color:var(--ink-faint); }
+
+  .modal-overlay{ position:fixed; inset:0; background:rgba(18,42,40,.45); display:none; align-items:center; justify-content:center; z-index:50; padding:20px; }
+  .modal-overlay.open{ display:flex; }
+  .modal{ background:var(--surface); border-radius:20px; padding:26px; width:100%; max-width:440px; box-shadow:0 24px 60px -12px rgba(18,42,40,.4); }
+  .modal h3{ font-size:18px; margin-bottom:4px; }
+  .modal p.hint{ font-size:12.5px; color:var(--ink-faint); margin-bottom:18px; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:12px; font-weight:700; color:var(--ink-soft); margin-bottom:6px; }
+  .field input, .field select, .field textarea{ width:100%; border:1px solid var(--line); border-radius:12px; padding:11px 14px; font-size:13.5px; font-family:inherit; }
+  .field input:focus, .field select:focus, .field textarea:focus{ outline:none; border-color:var(--teal); }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+  .toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--teal-deep); color:#fff; padding:12px 20px; border-radius:14px; font-size:13px; font-weight:600; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:60; box-shadow:var(--shadow); }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .empty-row{ padding:16px 0; color:var(--ink-faint); font-size:12.5px; font-style:italic; }
+
+  ::-webkit-scrollbar{ width:8px; } ::-webkit-scrollbar-thumb{ background:var(--line); border-radius:4px; }
+
+  /* ===== Responsive : PC inchangé / tablette compacte / téléphone barre basse ===== */
+  @media (max-width:1024px) and (min-width:601px){
+    .sidebar{ width:86px; padding:22px 10px; align-items:center; }
+    .brand-name{ display:none; }
+    .nav button{ justify-content:center; padding:12px 0; }
+    .label{ display:none; }
+    .who-name, .who-role{ display:none; }
+    #dbStatusText{ display:none; }
+    .who{ justify-content:center; }
+    .main{ padding:26px 22px 50px; }
+    .grid-3{ grid-template-columns:repeat(2,1fr); }
+  }
+  @media (max-width:600px){
+    .app{ flex-direction:column; }
+    .sidebar{ position:fixed; left:0; right:0; bottom:0; top:auto; height:auto; width:100%; flex-direction:row; align-items:stretch; padding:6px 4px; overflow-x:auto; z-index:40; box-shadow:0 -4px 18px rgba(10,20,24,.15); border-right:none; border-top:1px solid var(--line); }
+    .brand, .sidebar-foot{ display:none; }
+    .nav{ flex-direction:row; flex:1; gap:2px; }
+    .nav button{ flex-direction:column; gap:3px; padding:8px 6px !important; min-width:60px; flex-shrink:0; }
+    .label{ font-size:9px; white-space:nowrap; }
+    .mobile-brand{ display:flex; align-items:center; gap:8px; font-family:'Space Grotesk'; font-weight:700; font-size:16px; color:var(--teal-deep); margin-bottom:18px; }
+    .main{ padding:20px 18px 96px; }
+    .greeting{ font-size:23px; }
+    .grid-3, .grid-2{ grid-template-columns:1fr; }
+    .stay-card{ flex-direction:column; align-items:flex-start; text-align:left; }
+    .timeline{ justify-content:flex-start; overflow-x:auto; }
+    .modal{ max-width:92vw; padding:20px; }
+    .chat-shell{ height:70vh; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">➕</div>
+      <div class="brand-name">Relia Santé</div>
+    </div>
+    <ul class="nav">
+      <li><button data-target="accueil" class="active"><span class="ic">🏠</span><span class="label">Accueil</span></button></li>
+      <li><button data-target="parcours"><span class="ic">🗺️</span><span class="label">Parcours</span></button></li>
+      <li><button data-target="messages"><span class="ic">💬</span><span class="label">Messages</span></button></li>
+      <li><button data-target="documents"><span class="ic">📄</span><span class="label">Documents</span></button></li>
+      <li><button data-target="profil"><span class="ic">👤</span><span class="label">Profil</span></button></li>
+    </ul>
+    <div class="sidebar-foot">
+      <div class="who">
+        <div class="who-avatar" id="whoAvatar">🧑</div>
+        <div>
+          <div class="who-name" id="whoName">…</div>
+          <div class="who-role" id="whoRole">Patient Hospitalisé</div>
+        </div>
+      </div>
+      <div class="db-status" id="dbStatus"><span class="dotstatus"></span><span id="dbStatusText">Connexion à la base…</span></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="mobile-brand">➕ Relia Santé</div>
+    <div id="setupBanner"></div>
+
+    <!-- ACCUEIL -->
+    <section class="section active" id="accueil">
+      <div class="section-head">
+        <div class="greeting" id="greeting">Bonjour 👋</div>
+        <div class="subtitle">Bienvenue sur votre portail de soins Relia Santé.</div>
+      </div>
+
+      <div class="eyebrow">Votre parcours de soins</div>
+      <div class="card stay-card" id="stayCard">
+        <div class="stay-icon">🏥</div>
+        <div style="flex:1;">
+          <div class="stay-title" id="stayTitle">Chargement…</div>
+          <div class="stay-sub" id="staySub"></div>
+          <div class="next-step"><span class="next-dot"></span><span><strong>Prochaine étape :</strong> <span id="nextStepText"></span></span></div>
+          <div style="margin-top:14px;"><button class="btn btn-sm" data-target="parcours">Voir mon parcours →</button></div>
+        </div>
+        <div class="stay-badge" id="stayBadge"></div>
+      </div>
+
+      <div class="eyebrow" style="margin-top:26px;">Modules principaux</div>
+      <div class="grid grid-3">
+        <button class="module-card" data-target="profil"><div class="module-icon" style="background:#E5E9FB;">👤</div><div class="module-title">Mon espace patient</div></button>
+        <button class="module-card" data-target="parcours"><div class="module-icon" style="background:var(--mint-tint);">🏥</div><div class="module-title">Mes séjours</div></button>
+        <button class="module-card" data-target="messages"><div class="module-icon" style="background:#EFE5FB;">💬</div><div class="module-title">Messages</div></button>
+        <button class="module-card" data-target="documents"><div class="module-icon" style="background:var(--amber-tint);">📄</div><div class="module-title">Documents</div></button>
+        <button class="module-card" data-target="profil"><div class="module-icon" style="background:var(--surface-2);">⚙️</div><div class="module-title">Profil</div></button>
+        <button class="module-card" data-target="parcours"><div class="module-icon" style="background:#FBE5EE;">➜</div><div class="module-title">Autres services</div></button>
+      </div>
+    </section>
+
+    <!-- PARCOURS -->
+    <section class="section" id="parcours">
+      <div class="section-head"><div class="section-title">Mon Parcours</div><div class="subtitle">Suivez chaque étape de votre séjour hospitalier.</div></div>
+
+      <div class="card" style="display:flex;align-items:center;gap:20px;margin-bottom:22px;">
+        <div class="stay-icon" style="background:var(--surface-2);">🕐</div>
+        <div style="flex:1;">
+          <div class="subtitle" style="margin:0;">Séjour actuel</div>
+          <div class="stay-title" id="parcoursTitle">Chargement…</div>
+          <div class="stay-sub" id="parcoursSub"></div>
+        </div>
+        <button class="btn btn-ghost btn-sm">Détails du séjour</button>
+      </div>
+
+      <div class="eyebrow">Timeline visuelle</div>
+      <div class="timeline" id="timeline"></div>
+
+      <div class="eyebrow" style="margin-top:10px;">Mes professionnels</div>
+      <div class="grid grid-3" id="proGrid"></div>
+
+      <button class="btn btn-block" style="margin-top:18px;" data-target="messages">👥 Contacter mon équipe de soins</button>
+
+      <div class="eyebrow" style="margin-top:26px;">Mon ressenti</div>
+      <div class="ressenti-card">
+        <div class="ressenti-q">« Comment vous sentez-vous aujourd'hui ? »</div>
+        <div class="ressenti-opts">
+          <button class="ressenti-btn" data-r="ca_va">😊 Ça va</button>
+          <button class="ressenti-btn" data-r="question">😐 J'ai une question</button>
+          <button class="ressenti-btn" data-r="besoin_aide">😟 Besoin d'aide</button>
+        </div>
+        <div class="ressenti-log" id="ressentiLog"></div>
+      </div>
+    </section>
+
+    <!-- MESSAGES -->
+    <section class="section" id="messages">
+      <div class="section-head"><div class="section-title">Messagerie</div><div class="subtitle">Échangez directement avec vos services de soins.</div></div>
+      <div class="chat-shell">
+        <div class="chat-header">
+          <div class="pro-avatar" style="width:44px;height:44px;font-size:18px;margin:0;" id="chatAvatar">🧑‍💼</div>
+          <div>
+            <div class="pro-name" id="chatServiceName">Secrétariat Chirurgie</div>
+            <div style="font-size:11.5px;color:var(--mint);font-weight:600;">● En ligne</div>
+          </div>
+        </div>
+        <div class="chat-log" id="chatLog"></div>
+        <div class="chat-input-row">
+          <input type="text" id="chatInput" placeholder="Écrivez votre message…">
+          <button class="send-btn" id="chatSend">➤</button>
+        </div>
+        <div class="chat-notice">La messagerie sécurisée est destinée à des échanges non urgents.</div>
+      </div>
+    </section>
+
+    <!-- DOCUMENTS -->
+    <section class="section" id="documents">
+      <div class="section-head"><div class="section-title">Coffre-fort Documents</div><div class="subtitle">Accédez en toute sécurité à vos documents médicaux.</div></div>
+
+      <div class="doc-stats">
+        <div class="doc-stat"><div class="n" id="docTotal">0</div><div class="l">Total Documents</div></div>
+        <div class="doc-stat"><div class="n" id="docNouveaux">0</div><div class="l">Depuis votre admission</div></div>
+        <button class="doc-stat add" id="btnAddDoc">➕ Ajouter un document</button>
+      </div>
+
+      <div class="doc-filters" id="docFilters">
+        <button class="doc-filter active" data-cat="Tous">Tous</button>
+        <button class="doc-filter" data-cat="Compte-rendus">Compte-rendus</button>
+        <button class="doc-filter" data-cat="Ordonnances">Ordonnances</button>
+        <button class="doc-filter" data-cat="Résultats">Résultats</button>
+        <button class="doc-filter" data-cat="Sortie">Sortie</button>
+      </div>
+
+      <div id="docList"></div>
+    </section>
+
+    <!-- PROFIL -->
+    <section class="section" id="profil">
+      <div class="section-head"><div class="section-title">Mon Espace Patient</div><div class="subtitle">Gérez vos informations personnelles et vos préférences.</div></div>
+
+      <div class="card profile-card">
+        <div class="profile-avatar" id="profileAvatar">🧑</div>
+        <div style="flex:1;">
+          <div class="profile-name" id="profileName">…</div>
+          <div class="profile-meta" id="profileMeta"></div>
+        </div>
+        <button class="btn btn-mint btn-sm" id="btnEditProfile">Modifier le profil</button>
+      </div>
+
+      <div class="eyebrow">Paramètres et confidentialité</div>
+      <div class="settings-row"><div class="settings-icon">⚙️</div><div><div class="settings-title">Mes préférences</div><div class="settings-sub">Langue, thème, accessibilité — à venir</div></div></div>
+      <div class="settings-row"><div class="settings-icon">👥</div><div><div class="settings-title">Mes personnes de confiance</div><div class="settings-sub">Contact d'urgence & proches autorisés — à venir</div></div></div>
+      <div class="settings-row"><div class="settings-icon">🛡️</div><div><div class="settings-title">Mes autorisations de partage</div><div class="settings-sub">Gérer l'accès à mes données de santé — à venir</div></div></div>
+    </section>
+
+  </main>
+</div>
+
+<div class="modal-overlay" id="modalDoc">
+  <div class="modal">
+    <h3>Ajouter un document</h3>
+    <p class="hint">Enregistré en base — ceci est une démonstration : aucun fichier réel n'est stocké, seulement les informations.</p>
+    <div class="field"><label>Titre du document</label><input type="text" id="docTitre" placeholder="Ex : Résultat prise de sang"></div>
+    <div class="field"><label>Catégorie</label>
+      <select id="docCategorie"><option>Compte-rendus</option><option>Ordonnances</option><option>Résultats</option><option>Sortie</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" data-close-modal>Annuler</button>
+      <button class="btn btn-sm" id="docSubmit">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalProfile">
+  <div class="modal">
+    <h3>Modifier le profil</h3>
+    <p class="hint">Enregistré en base de données.</p>
+    <div class="field"><label>Prénom</label><input type="text" id="prProfileFirst"></div>
+    <div class="field"><label>Nom</label><input type="text" id="prProfileLast"></div>
+    <div class="field"><label>Email</label><input type="email" id="prProfileEmail"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" data-close-modal>Annuler</button>
+      <button class="btn btn-sm" id="profileSubmit">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   CONFIGURATION SUPABASE — même projet que Pulse Qualité, ou un
+   projet dédié : à vous de choisir. Remplacez les deux valeurs.
+   ============================================================ */
+const SUPABASE_URL = 'VOTRE_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'VOTRE_SUPABASE_ANON_KEY';
+
+let sb = null, dbReady = false;
+try{
+  if(SUPABASE_URL !== 'VOTRE_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'VOTRE_SUPABASE_ANON_KEY'){
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    dbReady = true;
+  }
+}catch(e){ dbReady = false; }
+
+/* ---------- Navigation ---------- */
+function goTo(target){
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active', b.dataset.target===target));
+  document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active', s.id===target));
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+document.querySelectorAll('[data-target]').forEach(el=>{
+  el.addEventListener('click', ()=> goTo(el.dataset.target));
+});
+
+/* ---------- Toast & modals ---------- */
+function showToast(t){ const el=document.getElementById('toast'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2600); }
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('[data-close-modal]').forEach(b=> b.addEventListener('click', ()=> b.closest('.modal-overlay').classList.remove('open')));
+document.querySelectorAll('.modal-overlay').forEach(ov=> ov.addEventListener('click', e=>{ if(e.target===ov) ov.classList.remove('open'); }));
+
+/* ============================================================
+   Chargement des données
+   ============================================================ */
+let PATIENT=null, SEJOUR=null, SERVICE=null, PROS=[], MESSAGES=[], DOCS=[], EVENTS=[], RESSENTI=[];
+
+async function loadAll(){
+  const statusEl = document.getElementById('dbStatus');
+  const statusText = document.getElementById('dbStatusText');
+  const banner = document.getElementById('setupBanner');
+
+  if(!dbReady){
+    statusEl.className='db-status db-off'; statusText.textContent='Base non connectée';
+    banner.innerHTML = `<div class="setup-banner">⚠️ Application non connectée à la base de données. Remplacez <code>SUPABASE_URL</code> et <code>SUPABASE_ANON_KEY</code> en haut du script par les vôtres (Supabase → Project Settings → API), puis enregistrez.</div>`;
+    return;
+  }
+  try{
+    const [p, sj, srv, pro, sp, msg, doc, ev, rr] = await Promise.all([
+      sb.from('patients').select('*').limit(1),
+      sb.from('sejours').select('*').eq('statut','actuel').limit(1),
+      sb.from('services').select('*'),
+      sb.from('professionnels').select('*'),
+      sb.from('sejour_professionnels').select('*'),
+      sb.from('messages').select('*').order('created_at',{ascending:true}),
+      sb.from('documents').select('*').order('date_doc',{ascending:false}),
+      sb.from('evenements').select('*'),
+      sb.from('ressenti_reponses').select('*').order('created_at',{ascending:false}),
+    ]);
+    const errs=[p,sj,srv,pro,sp,msg,doc,ev,rr].map(x=>x.error).filter(Boolean);
+    if(errs.length) throw errs[0];
+
+    PATIENT = p.data[0]; SEJOUR = sj.data[0];
+    SERVICE = SEJOUR ? srv.data.find(s=>s.id===SEJOUR.service_id) : null;
+    const proIds = SEJOUR ? sp.data.filter(x=>x.sejour_id===SEJOUR.id).map(x=>x.professionnel_id) : [];
+    PROS = pro.data.filter(x=>proIds.includes(x.id));
+    MESSAGES = SEJOUR ? msg.data.filter(m=>m.sejour_id===SEJOUR.id) : [];
+    DOCS = SEJOUR ? doc.data.filter(d=>d.sejour_id===SEJOUR.id) : [];
+    EVENTS = SEJOUR ? ev.data.filter(e=>e.sejour_id===SEJOUR.id) : [];
+    RESSENTI = SEJOUR ? rr.data.filter(r=>r.sejour_id===SEJOUR.id) : [];
+
+    statusEl.className='db-status db-ok'; statusText.textContent='Connecté à Supabase'; banner.innerHTML='';
+    renderAll();
+  }catch(err){
+    statusEl.className='db-status db-off'; statusText.textContent='Erreur de connexion';
+    banner.innerHTML = `<div class="setup-banner">⚠️ Impossible de charger les données (${(err&&err.message)||'erreur inconnue'}). Vérifiez que le script SQL a bien été exécuté.</div>`;
+  }
+}
+
+function renderAll(){
+  if(!PATIENT || !SEJOUR){
+    document.getElementById('greeting').textContent = 'Aucun séjour actif trouvé';
+    return;
+  }
+  document.getElementById('whoAvatar').textContent = PATIENT.avatar || '🧑';
+  document.getElementById('whoName').textContent = PATIENT.prenom;
+  document.getElementById('profileAvatar').textContent = PATIENT.avatar || '🧑';
+
+  document.getElementById('greeting').textContent = `Bonjour ${PATIENT.prenom} 👋`;
+  const codeService = (SERVICE && SERVICE.code) || (SERVICE && SERVICE.nom) || '—';
+  document.getElementById('stayTitle').textContent = codeService;
+  document.getElementById('staySub').textContent = `Chambre ${SEJOUR.chambre || '—'}`;
+  document.getElementById('nextStepText').textContent = SEJOUR.prochaine_etape || 'Aucune étape prévue';
+  document.getElementById('stayBadge').textContent = SEJOUR.statut==='actuel' ? 'Séjour actuel' : 'Séjour terminé';
+
+  document.getElementById('parcoursTitle').textContent = codeService;
+  document.getElementById('parcoursSub').textContent = `${(SERVICE&&SERVICE.nom)||''} — Chambre ${SEJOUR.chambre||'—'}`;
+
+  renderTimeline(); renderPros(); renderRessenti();
+  renderChat(); renderDocs();
+  document.getElementById('profileName').textContent = `${PATIENT.prenom} ${PATIENT.nom}`;
+  const naiss = PATIENT.date_naissance ? new Date(PATIENT.date_naissance).toLocaleDateString('fr-FR') : '—';
+  document.getElementById('profileMeta').innerHTML = `Né(e) le : ${naiss} &nbsp;·&nbsp; Email : ${PATIENT.email||'—'}`;
+}
+
+/* ---------- Timeline ---------- */
+function renderTimeline(){
+  const steps = [
+    {key:'admission', label:'Admission', date: SEJOUR.date_admission},
+    {key:'intervention', label:'Intervention', date: SEJOUR.date_intervention},
+    {key:'reeducation', label:'Rééducation', date: SEJOUR.date_reeducation},
+    {key:'retour_domicile', label:'Retour à domicile', date: SEJOUR.date_sortie_prevue, prevu:true},
+  ];
+  const order = ['admission','intervention','reeducation','retour_domicile','cloture'];
+  const currentIdx = order.indexOf(SEJOUR.etape_actuelle);
+  document.getElementById('timeline').innerHTML = steps.map((s,i)=>{
+    const stepIdx = order.indexOf(s.key);
+    const done = stepIdx < currentIdx;
+    const current = stepIdx === currentIdx;
+    const cls = done ? 'done' : current ? 'current' : '';
+    const icon = done ? '✓' : current ? '🕐' : '';
+    const dateTxt = current ? 'En cours' : (s.date ? new Date(s.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : (s.prevu?'À venir':'—'));
+    const prefix = s.prevu && !done && !current ? 'Prévu ' : '';
+    return `<div class="tl-step ${cls}"><div class="tl-dot">${icon}</div><div class="tl-label">${s.label}</div><div class="tl-date">${current?dateTxt:prefix+dateTxt}</div></div>`;
+  }).join('');
+}
+
+/* ---------- Professionnels ---------- */
+function renderPros(){
+  document.getElementById('proGrid').innerHTML = PROS.map(p=>`
+    <div class="pro-card">
+      <div class="pro-avatar">${p.avatar||'🧑‍⚕️'}<span class="pro-status ${p.en_ligne?'on':'off'}"></span></div>
+      <div class="pro-name">${p.nom}</div>
+      <div class="pro-role">${p.role}</div>
+      <button class="btn btn-mint btn-sm" style="width:100%;" onclick="goTo('messages')">💬 Message</button>
+    </div>`).join('') || '<div class="empty-row">Aucun professionnel rattaché à ce séjour.</div>';
+}
+
+/* ---------- Ressenti ---------- */
+document.querySelectorAll('.ressenti-btn').forEach(btn=>{
+  btn.addEventListener('click', async ()=>{
+    if(!dbReady){ showToast('Base non connectée.'); return; }
+    if(!SEJOUR){ showToast('Aucun séjour actif.'); return; }
+    const { error } = await sb.from('ressenti_reponses').insert({ sejour_id: SEJOUR.id, reponse: btn.dataset.r });
+    if(error){ showToast('Erreur : '+error.message); return; }
+    showToast('Merci, votre équipe de soins est informée.');
+    await loadAll();
+  });
+});
+function renderRessenti(){
+  const log = document.getElementById('ressentiLog');
+  if(!RESSENTI.length){ log.textContent=''; return; }
+  const last = RESSENTI[0];
+  const labels = {ca_va:'😊 Ça va', question:'😐 J\'ai une question', besoin_aide:'😟 Besoin d\'aide'};
+  log.textContent = `Dernière réponse : ${labels[last.reponse]} — ${new Date(last.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}`;
+}
+
+/* ---------- Messages ---------- */
+function renderChat(){
+  const log = document.getElementById('chatLog');
+  if(!MESSAGES.length){ log.innerHTML = '<div class="empty-row">Aucun message pour le moment.</div>'; return; }
+  const lastServiceMsg = [...MESSAGES].reverse().find(m=>m.expediteur==='service');
+  document.getElementById('chatServiceName').textContent = (lastServiceMsg&&lastServiceMsg.service_nom) || 'Équipe de soins';
+  log.innerHTML = MESSAGES.map(m=>{
+    const time = new Date(m.created_at).toLocaleString('fr-FR',{weekday:'short',hour:'2-digit',minute:'2-digit'});
+    return `<div class="msg-row ${m.expediteur}"><div class="msg-bubble">${m.contenu}</div><div class="msg-time">${time}</div></div>`;
+  }).join('');
+  log.scrollTop = log.scrollHeight;
+}
+document.getElementById('chatSend').addEventListener('click', sendMessage);
+document.getElementById('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendMessage(); });
+async function sendMessage(){
+  const input = document.getElementById('chatInput');
+  const contenu = input.value.trim();
+  if(!contenu) return;
+  if(!dbReady){ showToast('Base non connectée.'); return; }
+  if(!SEJOUR){ showToast('Aucun séjour actif.'); return; }
+  const { error } = await sb.from('messages').insert({ sejour_id: SEJOUR.id, expediteur:'patient', contenu, service_nom: document.getElementById('chatServiceName').textContent });
+  if(error){ showToast('Erreur : '+error.message); return; }
+  input.value='';
+  await loadAll();
+}
+
+/* ---------- Documents ---------- */
+let activeCat = 'Tous';
+function renderDocs(){
+  document.getElementById('docTotal').textContent = DOCS.length;
+  document.getElementById('docNouveaux').textContent = DOCS.filter(d=>{
+    const days = (Date.now() - new Date(d.created_at||d.date_doc))/86400000;
+    return days <= 7;
+  }).length;
+  const list = document.getElementById('docList');
+  const filtered = activeCat==='Tous' ? DOCS : DOCS.filter(d=>d.categorie===activeCat);
+  list.innerHTML = filtered.map(d=>`
+    <div class="doc-row">
+      <div class="doc-icon">📄</div>
+      <div>
+        <div class="doc-title">${d.titre}</div>
+        <div class="doc-meta">${d.date_doc?new Date(d.date_doc).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}):''} · ${d.taille_kb?(d.taille_kb/1000).toFixed(1)+' MB':''}<span class="doc-tag">${d.categorie}</span></div>
+      </div>
+      <div class="doc-actions"><span title="Télécharger (démonstration)" style="cursor:pointer;" onclick="showToast('Démonstration — aucun fichier réel n\'est stocké.')">⬇️</span></div>
+    </div>`).join('') || '<div class="empty-row">Aucun document dans cette catégorie.</div>';
+}
+document.querySelectorAll('.doc-filter').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.doc-filter').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active'); activeCat = btn.dataset.cat; renderDocs();
+  });
+});
+document.getElementById('btnAddDoc').addEventListener('click', ()=> openModal('modalDoc'));
+document.getElementById('docSubmit').addEventListener('click', async ()=>{
+  const titre = document.getElementById('docTitre').value.trim();
+  const categorie = document.getElementById('docCategorie').value;
+  if(!titre){ showToast('Indiquez un titre.'); return; }
+  if(!dbReady){ showToast('Base non connectée.'); return; }
+  const { error } = await sb.from('documents').insert({ sejour_id: SEJOUR.id, titre, categorie, taille_kb: 500, date_doc: new Date().toISOString().slice(0,10) });
+  if(error){ showToast('Erreur : '+error.message); return; }
+  document.getElementById('docTitre').value='';
+  closeModal('modalDoc'); showToast('Document ajouté.');
+  await loadAll();
+});
+
+/* ---------- Profil ---------- */
+document.getElementById('btnEditProfile').addEventListener('click', ()=>{
+  document.getElementById('prProfileFirst').value = PATIENT.prenom;
+  document.getElementById('prProfileLast').value = PATIENT.nom;
+  document.getElementById('prProfileEmail').value = PATIENT.email||'';
+  openModal('modalProfile');
+});
+document.getElementById('profileSubmit').addEventListener('click', async ()=>{
+  const prenom = document.getElementById('prProfileFirst').value.trim();
+  const nom = document.getElementById('prProfileLast').value.trim();
+  const email = document.getElementById('prProfileEmail').value.trim();
+  if(!prenom || !nom){ showToast('Prénom et nom requis.'); return; }
+  if(!dbReady){ showToast('Base non connectée.'); return; }
+  const { error } = await sb.from('patients').update({ prenom, nom, email }).eq('id', PATIENT.id);
+  if(error){ showToast('Erreur : '+error.message); return; }
+  closeModal('modalProfile'); showToast('Profil mis à jour.');
+  await loadAll();
+});
+
+loadAll();
+</script>
+</body>
+</html>

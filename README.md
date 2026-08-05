@@ -40,6 +40,8 @@ relia-sante/
     ├── CHOIX-TECHNIQUES.md      → justification des choix techniques
     ├── CONFIGURATION-BASE-DE-DONNEES.md → connecter votre base, sans terminal
     ├── LIEN-PULSE-QUALITE.md    → comment lier plus tard cette application à Pulse Qualité
+    ├── VISION-STRATEGIQUE.md    → le jumeau numérique du parcours patient
+    ├── EVOLUTIONS-PROPOSEES.md  → traduction de la vision en étapes concrètes
     └── PROCHAINES-ETAPES.md     → authentification, tableau de bord équipe, etc.
 ```
 

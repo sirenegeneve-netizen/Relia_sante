@@ -412,8 +412,8 @@
    CONFIGURATION SUPABASE — même projet que Pulse Qualité, ou un
    projet dédié : à vous de choisir. Remplacez les deux valeurs.
    ============================================================ */
-const SUPABASE_URL = 'https://vblfvrrukvfrzwtqgboo.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_h3Ka1v4ZqUuk-F0o8s0tpA_-T-62hg0';
+const SUPABASE_URL = 'VOTRE_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'VOTRE_SUPABASE_ANON_KEY';
 
 let sb = null, dbReady = false;
 try{
@@ -551,7 +551,7 @@ document.querySelectorAll('.ressenti-btn').forEach(btn=>{
   btn.addEventListener('click', async ()=>{
     if(!dbReady){ showToast('Base non connectée.'); return; }
     if(!SEJOUR){ showToast('Aucun séjour actif.'); return; }
-    const { error } = await sb.from('ressenti_reponses').insert({ sejour_id: SEJOUR.id, reponse: btn.dataset.r });
+    const { error } = await sb.from('relia_ressenti_reponses').insert({ sejour_id: SEJOUR.id, reponse: btn.dataset.r });
     if(error){ showToast('Erreur : '+error.message); return; }
     showToast('Merci, votre équipe de soins est informée.');
     await loadAll();
@@ -585,7 +585,7 @@ async function sendMessage(){
   if(!contenu) return;
   if(!dbReady){ showToast('Base non connectée.'); return; }
   if(!SEJOUR){ showToast('Aucun séjour actif.'); return; }
-  const { error } = await sb.from('messages').insert({ sejour_id: SEJOUR.id, expediteur:'patient', contenu, service_nom: document.getElementById('chatServiceName').textContent });
+  const { error } = await sb.from('relia_messages').insert({ sejour_id: SEJOUR.id, expediteur:'patient', contenu, service_nom: document.getElementById('chatServiceName').textContent });
   if(error){ showToast('Erreur : '+error.message); return; }
   input.value='';
   await loadAll();
@@ -623,7 +623,7 @@ document.getElementById('docSubmit').addEventListener('click', async ()=>{
   const categorie = document.getElementById('docCategorie').value;
   if(!titre){ showToast('Indiquez un titre.'); return; }
   if(!dbReady){ showToast('Base non connectée.'); return; }
-  const { error } = await sb.from('documents').insert({ sejour_id: SEJOUR.id, titre, categorie, taille_kb: 500, date_doc: new Date().toISOString().slice(0,10) });
+  const { error } = await sb.from('relia_documents').insert({ sejour_id: SEJOUR.id, titre, categorie, taille_kb: 500, date_doc: new Date().toISOString().slice(0,10) });
   if(error){ showToast('Erreur : '+error.message); return; }
   document.getElementById('docTitre').value='';
   closeModal('modalDoc'); showToast('Document ajouté.');
@@ -643,7 +643,7 @@ document.getElementById('profileSubmit').addEventListener('click', async ()=>{
   const email = document.getElementById('prProfileEmail').value.trim();
   if(!prenom || !nom){ showToast('Prénom et nom requis.'); return; }
   if(!dbReady){ showToast('Base non connectée.'); return; }
-  const { error } = await sb.from('patients').update({ prenom, nom, email }).eq('id', PATIENT.id);
+  const { error } = await sb.from('relia_patients').update({ prenom, nom, email }).eq('id', PATIENT.id);
   if(error){ showToast('Erreur : '+error.message); return; }
   closeModal('modalProfile'); showToast('Profil mis à jour.');
   await loadAll();

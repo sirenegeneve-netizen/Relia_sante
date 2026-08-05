@@ -457,15 +457,15 @@ async function loadAll(){
   }
   try{
     const [p, sj, srv, pro, sp, msg, doc, ev, rr] = await Promise.all([
-      sb.from('patients').select('*').limit(1),
-      sb.from('sejours').select('*').eq('statut','actuel').limit(1),
-      sb.from('services').select('*'),
-      sb.from('professionnels').select('*'),
-      sb.from('sejour_professionnels').select('*'),
-      sb.from('messages').select('*').order('created_at',{ascending:true}),
-      sb.from('documents').select('*').order('date_doc',{ascending:false}),
-      sb.from('evenements').select('*'),
-      sb.from('ressenti_reponses').select('*').order('created_at',{ascending:false}),
+      sb.from('relia_patients').select('*').limit(1),
+      sb.from('relia_sejours').select('*').eq('statut','actuel').limit(1),
+      sb.from('relia_services').select('*'),
+      sb.from('relia_professionnels').select('*'),
+      sb.from('relia_sejour_professionnels').select('*'),
+      sb.from('relia_messages').select('*').order('created_at',{ascending:true}),
+      sb.from('relia_documents').select('*').order('date_doc',{ascending:false}),
+      sb.from('relia_evenements').select('*'),
+      sb.from('relia_ressenti_reponses').select('*').order('created_at',{ascending:false}),
     ]);
     const errs=[p,sj,srv,pro,sp,msg,doc,ev,rr].map(x=>x.error).filter(Boolean);
     if(errs.length) throw errs[0];

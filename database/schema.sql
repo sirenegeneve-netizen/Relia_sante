@@ -9,6 +9,7 @@
 -- ============================================================
 
 -- Permet de relancer ce script sans erreur si les tables existent déjà
+drop table if exists relia_actions cascade;
 drop table if exists relia_documents cascade;
 drop table if exists relia_evenements cascade;
 drop table if exists relia_ressenti_reponses cascade;
@@ -49,7 +50,7 @@ create table relia_sejours (
   service_id bigint references relia_services(id),
   chambre text,
   statut text default 'actuel' check (statut in ('actuel','termine')),
-  etape_actuelle text default 'admission' check (etape_actuelle in ('admission','intervention','reeducation','retour_domicile','cloture')),
+  etape_actuelle text default 'admission' check (etape_actuelle in ('avant_soins','admission','intervention','reeducation','retour_domicile','suivi_externe','ems','cloture')),
   date_admission date,
   date_intervention date,
   date_reeducation date,
@@ -93,6 +94,17 @@ create table relia_evenements (
   created_at timestamptz default now()
 );
 
+-- "Mes actions" : ce que le patient a concrètement à faire dans son parcours
+create table relia_actions (
+  id bigint generated always as identity primary key,
+  sejour_id bigint references relia_sejours(id) on delete cascade,
+  titre text not null,           -- ex: 'Envoyer document assurance accident'
+  echeance date,
+  responsable text default 'Vous',
+  statut text default 'a_faire' check (statut in ('a_faire','fait')),
+  created_at timestamptz default now()
+);
+
 create table relia_documents (
   id bigint generated always as identity primary key,
   sejour_id bigint references relia_sejours(id) on delete cascade,
@@ -109,6 +121,7 @@ create table relia_documents (
 -- via la clé publique, à restreindre avant toute vraie donnée patient.
 -- ============================================================
 alter table relia_patients enable row level security;
+alter table relia_actions enable row level security;
 alter table relia_services enable row level security;
 alter table relia_professionnels enable row level security;
 alter table relia_sejours enable row level security;
@@ -119,6 +132,7 @@ alter table relia_evenements enable row level security;
 alter table relia_documents enable row level security;
 
 create policy "public read/write relia_patients" on relia_patients for all using (true) with check (true);
+create policy "public read/write relia_actions" on relia_actions for all using (true) with check (true);
 create policy "public read/write relia_services" on relia_services for all using (true) with check (true);
 create policy "public read/write relia_professionnels" on relia_professionnels for all using (true) with check (true);
 create policy "public read/write relia_sejours" on relia_sejours for all using (true) with check (true);
@@ -142,7 +156,7 @@ insert into relia_professionnels (nom, role, avatar, en_ligne) values
 ('Dr. Martin', 'Chirurgien', '👨‍⚕️', true),
 ('Mme. Lefebvre', 'Infirmière', '👩‍⚕️', true),
 ('Mr. Dubois', 'Physiothérapeute', '🧑‍⚕️', false),
-('Secrétariat Chirurgie', 'Secrétariat', '🧑‍💼', true);
+('Secrétariat médical', 'Secrétariat', '🧑‍💼', true);
 
 insert into relia_sejours (patient_id, service_id, chambre, statut, etape_actuelle, date_admission, date_intervention, date_reeducation, date_sortie_prevue, prochaine_etape) values
 (1, 1, '214', 'actuel', 'reeducation', '2026-10-12', '2026-10-13', '2026-10-16', '2026-10-18', 'Consultation demain 10h');
@@ -151,10 +165,16 @@ insert into relia_sejour_professionnels (sejour_id, professionnel_id) values
 (1,1), (1,2), (1,3);
 
 insert into relia_messages (sejour_id, professionnel_id, service_nom, expediteur, contenu, created_at) values
-(1, 4, 'Secrétariat Chirurgie', 'service', 'Votre dossier d''admission est complet.', now() - interval '2 days'),
-(1, 4, 'Secrétariat Chirurgie', 'service', 'Bonjour Nathalie, avez-vous bien reçu les consignes pour votre sortie ?', now() - interval '1 day 7 hours'),
-(1, 4, 'Secrétariat Chirurgie', 'patient', 'Oui, merci. J''ai une question concernant l''ordonnance.', now() - interval '1 day 6 hours 35 minutes'),
-(1, 4, 'Secrétariat Chirurgie', 'service', 'Je vous envoie le document complémentaire.', now() - interval '5 hours');
+(1, 4, 'Secrétariat médical', 'service', 'Votre dossier d''admission est complet.', now() - interval '2 days'),
+(1, 4, 'Secrétariat médical', 'service', 'Bonjour Nathalie, avez-vous bien reçu les consignes pour votre sortie ?', now() - interval '1 day 7 hours'),
+(1, 4, 'Secrétariat médical', 'patient', 'Oui, merci. J''ai une question concernant l''ordonnance.', now() - interval '1 day 6 hours 35 minutes'),
+(1, 4, 'Secrétariat médical', 'service', 'Je vous envoie le document complémentaire.', now() - interval '5 hours');
+
+insert into relia_actions (sejour_id, titre, echeance, responsable, statut) values
+(1, 'Confirmer le rendez-vous de physiothérapie', '2026-10-17', 'Vous', 'a_faire'),
+(1, 'Transmettre l''attestation d''assurance accident', '2026-10-16', 'Vous', 'a_faire'),
+(1, 'Préparer le retour à domicile', '2026-10-18', 'Vous', 'a_faire'),
+(1, 'Compléter le questionnaire préopératoire', '2026-10-11', 'Vous', 'fait');
 
 insert into relia_evenements (sejour_id, description, gravite) values
 (1, 'Douleur légère persistante au niveau du pansement', 'orange');

@@ -42,6 +42,7 @@ relia-sante/
     ├── LIEN-PULSE-QUALITE.md    → comment lier plus tard cette application à Pulse Qualité
     ├── VISION-STRATEGIQUE.md    → le jumeau numérique du parcours patient
     ├── EVOLUTIONS-PROPOSEES.md  → traduction de la vision en étapes concrètes
+    ├── BACKLOG-FONCTIONNEL.md   → statut détaillé des 9 évolutions attendues (A à I)
     └── PROCHAINES-ETAPES.md     → authentification, tableau de bord équipe, etc.
 ```
 

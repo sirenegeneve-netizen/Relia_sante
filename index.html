@@ -104,6 +104,20 @@
   .action-titre{ font-size:13.5px; font-weight:600; }
   .action-titre.done{ text-decoration:line-through; color:var(--ink-faint); font-weight:500; }
   .action-meta{ font-size:11.5px; color:var(--ink-faint); }
+
+  .inbox-row{ all:unset; display:flex; align-items:center; gap:14px; padding:16px 18px; border:1px solid var(--line); border-radius:16px; margin-bottom:10px; background:var(--surface); box-shadow:var(--shadow); }
+  .inbox-row:hover{ border-color:var(--turquoise); transform:translateY(-1px); }
+  .inbox-icon{ width:46px; height:46px; border-radius:50%; background:var(--petrol-tint); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+  .inbox-name{ font-weight:700; font-size:14px; }
+  .inbox-preview{ font-size:12.5px; color:var(--ink-faint); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:340px; }
+  .inbox-meta{ margin-left:auto; text-align:right; flex-shrink:0; }
+  .inbox-time{ font-size:11px; color:var(--ink-faint); }
+  .inbox-badge{ display:inline-block; margin-top:4px; background:var(--turquoise); color:#fff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; }
+
+  .need-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:6px; }
+  .need-card{ all:unset; display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; background:var(--surface-2); border-radius:16px; padding:20px 12px; font-size:13px; font-weight:700; }
+  .need-card:hover{ background:var(--turquoise-tint); }
+  .need-card .ic{ font-size:26px; }
   .next-dot{ width:8px; height:8px; border-radius:50%; background:var(--mint); flex-shrink:0; }
 
   .btn{ background:linear-gradient(135deg, var(--petrol), var(--turquoise-deep)); color:#fff; border:none; padding:11px 20px; border-radius:24px; font-size:13.5px; font-weight:700; box-shadow:0 8px 18px -10px rgba(11,79,108,.55); transition:transform .12s, box-shadow .12s; }
@@ -135,6 +149,8 @@
   .tl-label{ font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-soft); }
   .tl-step.current .tl-label{ color:var(--turquoise-deep); }
   .tl-date{ font-size:11.5px; color:var(--ink-faint); }
+  .tl-msg{ font-size:11px; font-weight:700; color:var(--petrol); margin-top:4px; cursor:pointer; }
+  .tl-msg:hover{ text-decoration:underline; }
 
   .pro-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px; text-align:center; box-shadow:var(--shadow); }
   .pro-avatar{ width:64px; height:64px; border-radius:50%; background:var(--turquoise-tint); display:flex; align-items:center; justify-content:center; font-size:28px; margin:0 auto 10px; position:relative; }
@@ -293,7 +309,7 @@
       <div class="eyebrow">Que souhaitez-vous faire aujourd'hui ?</div>
       <div class="grid grid-3">
         <button class="module-card" data-target="parcours"><div class="module-icon" style="background:var(--turquoise-tint);">🧭</div><div class="module-title">Suivre mon parcours</div></button>
-        <button class="module-card" data-target="messages"><div class="module-icon" style="background:var(--petrol-tint);">💬</div><div class="module-title">Poser une question</div></button>
+        <button class="module-card" data-target="messages" data-open-need="true"><div class="module-icon" style="background:var(--petrol-tint);">💬</div><div class="module-title">Poser une question</div></button>
         <button class="module-card" data-target="documents"><div class="module-icon" style="background:var(--turquoise-tint);">📄</div><div class="module-title">Ajouter un document</div></button>
         <button class="module-card" data-target="parcours"><div class="module-icon" style="background:var(--petrol-tint);">📅</div><div class="module-title">Voir mes rendez-vous</div></button>
         <button class="module-card" data-target="parcours"><div class="module-icon" style="background:var(--turquoise-tint);">✅</div><div class="module-title">Voir mes prochaines actions</div></button>
@@ -342,12 +358,20 @@
 
     <!-- MESSAGES -->
     <section class="section" id="messages">
-      <div class="section-head"><div class="section-title">Messagerie</div><div class="subtitle">Échangez directement avec vos services de soins.</div></div>
-      <div class="chat-shell">
+      <div class="section-head"><div class="section-title">Messages</div><div class="subtitle">Vos échanges avec l'équipe qui vous accompagne.</div></div>
+
+      <button class="btn btn-block" id="btnNewQuestion" style="margin-bottom:22px;">➕ Poser une question</button>
+
+      <!-- Boîte de réception : conversations par sujet, pas par service -->
+      <div id="msgInbox"></div>
+
+      <!-- Fil de conversation ouvert -->
+      <div class="chat-shell" id="msgThread" style="display:none;">
         <div class="chat-header">
-          <div class="pro-avatar" style="width:44px;height:44px;font-size:18px;margin:0;" id="chatAvatar">🧑‍💼</div>
+          <button class="btn-ghost btn-sm" id="btnBackInbox" style="border-radius:10px;">← Messages</button>
+          <div class="pro-avatar" style="width:40px;height:40px;font-size:16px;margin:0;" id="chatAvatar">🧑‍💼</div>
           <div>
-            <div class="pro-name" id="chatServiceName">Secrétariat Chirurgie</div>
+            <div class="pro-name" id="chatServiceName">—</div>
             <div style="font-size:11.5px;color:var(--mint);font-weight:600;">● En ligne</div>
           </div>
         </div>
@@ -403,6 +427,17 @@
   </main>
 </div>
 
+<div class="modal-overlay" id="modalNeed">
+  <div class="modal" style="max-width:480px;">
+    <h3>Quel est votre besoin ?</h3>
+    <p class="hint">Nous orientons votre message vers la bonne personne — vous n'avez rien d'autre à choisir.</p>
+    <div class="need-grid" id="needGrid"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" data-close-modal>Annuler</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modalDoc">
   <div class="modal">
     <h3>Ajouter un document</h3>
@@ -439,8 +474,8 @@
    CONFIGURATION SUPABASE — même projet que Pulse Qualité, ou un
    projet dédié : à vous de choisir. Remplacez les deux valeurs.
    ============================================================ */
-const SUPABASE_URL = 'https://vblfvrrukvfrzwtqgboo.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_h3Ka1v4ZqUuk-F0o8s0tpA_-T-62hg0';
+const SUPABASE_URL = 'VOTRE_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'VOTRE_SUPABASE_ANON_KEY';
 
 let sb = null, dbReady = false;
 try{
@@ -457,7 +492,10 @@ function goTo(target){
   window.scrollTo({top:0, behavior:'smooth'});
 }
 document.querySelectorAll('[data-target]').forEach(el=>{
-  el.addEventListener('click', ()=> goTo(el.dataset.target));
+  el.addEventListener('click', ()=>{
+    goTo(el.dataset.target);
+    if(el.dataset.openNeed==='true') setTimeout(openNeedModal, 50);
+  });
 });
 
 /* ---------- Toast & modals ---------- */
@@ -605,10 +643,10 @@ function renderActions(){
 /* ---------- Timeline ---------- */
 function renderTimeline(){
   const steps = [
-    {key:'admission', label:'Admission', date: SEJOUR.date_admission},
-    {key:'intervention', label:'Intervention', date: SEJOUR.date_intervention},
-    {key:'reeducation', label:'Rééducation', date: SEJOUR.date_reeducation},
-    {key:'retour_domicile', label:'Retour à domicile', date: SEJOUR.date_sortie_prevue, prevu:true},
+    {key:'admission', label:'Admission', date: SEJOUR.date_admission, conv:'Mon équipe soignante'},
+    {key:'intervention', label:'Intervention', date: SEJOUR.date_intervention, conv:'Préparation de mon intervention'},
+    {key:'reeducation', label:'Rééducation', date: SEJOUR.date_reeducation, conv:'Mon suivi'},
+    {key:'retour_domicile', label:'Retour à domicile', date: SEJOUR.date_sortie_prevue, prevu:true, conv:'Mon retour à domicile'},
   ];
   const order = ['admission','intervention','reeducation','retour_domicile','cloture'];
   const currentIdx = order.indexOf(SEJOUR.etape_actuelle);
@@ -620,8 +658,13 @@ function renderTimeline(){
     const icon = done ? '✓' : current ? '🕐' : '';
     const dateTxt = current ? 'En cours' : (s.date ? new Date(s.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : (s.prevu?'À venir':'—'));
     const prefix = s.prevu && !done && !current ? 'Prévu ' : '';
-    return `<div class="tl-step ${cls}"><div class="tl-dot">${icon}</div><div class="tl-label">${s.label}</div><div class="tl-date">${current?dateTxt:prefix+dateTxt}</div></div>`;
+    const count = MESSAGES.filter(m => (CONVERSATION_MAP[m.service_nom]||{}).label === s.conv).length;
+    const msgLine = count ? `<div class="tl-msg" data-conv="${s.conv}">💬 ${count} message${count>1?'s':''}</div>` : '';
+    return `<div class="tl-step ${cls}"><div class="tl-dot">${icon}</div><div class="tl-label">${s.label}</div><div class="tl-date">${current?dateTxt:prefix+dateTxt}</div>${msgLine}</div>`;
   }).join('');
+  document.querySelectorAll('.tl-msg').forEach(el=>{
+    el.addEventListener('click', ()=>{ goTo('messages'); openThreadByLabel(el.dataset.conv); });
+  });
 }
 
 /* ---------- Professionnels ---------- */
@@ -654,18 +697,123 @@ function renderRessenti(){
   log.textContent = `Dernière réponse : ${labels[last.reponse]} — ${new Date(last.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}`;
 }
 
-/* ---------- Messages ---------- */
-function renderChat(){
+/* ============================================================
+   Messages : le patient voit des conversations par SUJET, jamais
+   l'organisation interne. Le routage réel (service_nom en base)
+   reste invisible — utile plus tard côté vue professionnelle.
+   ============================================================ */
+
+// Routage réel (invisible au patient) → nom de conversation affiché
+const CONVERSATION_MAP = {
+  'Admission':            {label:'Mon équipe soignante',              icon:'👩\u200d⚕️'},
+  'Secrétariat médical':  {label:'Mon équipe soignante',              icon:'👩\u200d⚕️'},
+  'Soins':                {label:'Mon équipe soignante',              icon:'👩\u200d⚕️'},
+  'Anesthésie':           {label:'Préparation de mon intervention',   icon:'📋'},
+  'Rééducation':          {label:'Mon suivi',                          icon:'🏃'},
+  'EMS':                  {label:'Mon suivi',                          icon:'🏡'},
+  'Retour à domicile':    {label:'Mon retour à domicile',              icon:'🏠'},
+};
+
+// Les besoins que le patient peut exprimer, et leur routage réel associé.
+// "documents" n'ouvre pas une conversation : ça renvoie vers le module Documents.
+const NEEDS = [
+  {key:'douleur',     label:"J'ai une douleur",        icon:'🤕', service:'Soins'},
+  {key:'rdv',          label:'Mon rendez-vous',          icon:'📅', service:'Anesthésie'},
+  {key:'traitement',   label:'Mon traitement',           icon:'💊', service:'Soins'},
+  {key:'documents',    label:'Mes documents',            icon:'📄', service:null, redirect:'documents'},
+  {key:'retour',       label:'Mon retour à domicile',    icon:'🏠', service:'Retour à domicile'},
+  {key:'autre',        label:'Autre question',           icon:'❓', service:'Secrétariat médical'},
+];
+
+let ACTIVE_SERVICE = null; // routage réel de la conversation ouverte (invisible au patient)
+
+function renderChat(){ renderInbox(); }
+
+// Conversations toujours visibles selon l'étape du parcours, même sans message —
+// pour que le patient retrouve naturellement l'échange au bon moment (cf. Timeline).
+function defaultConversationsForEtape(etape){
+  const base = ['Mon équipe soignante'];
+  if(etape==='avant_soins' || etape==='admission' || etape==='intervention') base.push('Préparation de mon intervention');
+  if(etape==='reeducation') base.push('Mon suivi');
+  base.push('Mon retour à domicile');
+  return base;
+}
+
+function renderInbox(){
+  const box = document.getElementById('msgInbox');
+
+  // Regrouper les messages réels par nom de conversation (pas par service)
+  const byLabel = {};
+  MESSAGES.forEach(m=>{
+    const conv = CONVERSATION_MAP[m.service_nom] || {label:'Mon équipe soignante', icon:'👩\u200d⚕️'};
+    if(!byLabel[conv.label]) byLabel[conv.label] = { icon: conv.icon, msgs: [] };
+    byLabel[conv.label].msgs.push(m);
+  });
+
+  // Ajouter les conversations par défaut du moment, même vides
+  defaultConversationsForEtape(SEJOUR.etape_actuelle).forEach(label=>{
+    if(!byLabel[label]){
+      const entry = Object.entries(CONVERSATION_MAP).find(([,v])=>v.label===label);
+      byLabel[label] = { icon: entry ? entry[1].icon : '💬', msgs: [] };
+    }
+  });
+
+  const labels = Object.keys(byLabel);
+  box.innerHTML = labels.map(label=>{
+    const { icon, msgs } = byLabel[label];
+    const last = msgs[msgs.length-1];
+    const preview = last ? last.contenu : 'Aucun message pour le moment';
+    const time = last ? new Date(last.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : '';
+    const badge = msgs.length ? `<span class="inbox-badge">${msgs.length}</span>` : '';
+    return `<button class="inbox-row" data-conv="${label}">
+      <div class="inbox-icon">${icon}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="inbox-name">${label}</div>
+        <div class="inbox-preview">${preview}</div>
+      </div>
+      <div class="inbox-meta"><div class="inbox-time">${time}</div>${badge}</div>
+    </button>`;
+  }).join('');
+  box.querySelectorAll('.inbox-row').forEach(row=>{
+    row.addEventListener('click', ()=> openThreadByLabel(row.dataset.conv));
+  });
+}
+
+// Ouvrir une conversation depuis l'inbox : on retrouve le dernier routage réel
+// utilisé pour ce sujet, ou un routage par défaut si la conversation est vide.
+function openThreadByLabel(label){
+  const msgsForLabel = MESSAGES.filter(m => (CONVERSATION_MAP[m.service_nom]||{}).label === label);
+  const lastReal = msgsForLabel.length ? msgsForLabel[msgsForLabel.length-1].service_nom : null;
+  const fallback = Object.entries(CONVERSATION_MAP).find(([,v])=>v.label===label);
+  openThread(lastReal || (fallback ? fallback[0] : 'Secrétariat médical'), label);
+}
+
+function openThread(realService, label){
+  ACTIVE_SERVICE = realService; // reste invisible : jamais affiché au patient
+  const conv = CONVERSATION_MAP[realService] || {label: label||'Mon équipe soignante', icon:'💬'};
+  document.getElementById('msgInbox').style.display = 'none';
+  document.getElementById('msgThread').style.display = 'flex';
+  document.getElementById('chatServiceName').textContent = label || conv.label;
+  document.getElementById('chatAvatar').textContent = conv.icon;
+  renderThread(label || conv.label);
+}
+document.getElementById('btnBackInbox').addEventListener('click', ()=>{
+  document.getElementById('msgThread').style.display = 'none';
+  document.getElementById('msgInbox').style.display = 'block';
+  ACTIVE_SERVICE = null;
+});
+
+function renderThread(label){
   const log = document.getElementById('chatLog');
-  if(!MESSAGES.length){ log.innerHTML = '<div class="empty-row">Aucun message pour le moment.</div>'; return; }
-  const lastServiceMsg = [...MESSAGES].reverse().find(m=>m.expediteur==='service');
-  document.getElementById('chatServiceName').textContent = (lastServiceMsg&&lastServiceMsg.service_nom) || 'Équipe de soins';
-  log.innerHTML = MESSAGES.map(m=>{
+  const msgs = MESSAGES.filter(m => (CONVERSATION_MAP[m.service_nom]||{}).label === label);
+  if(!msgs.length){ log.innerHTML = '<div class="empty-row">Aucun message pour le moment. Écrivez le premier ci-dessous.</div>'; return; }
+  log.innerHTML = msgs.map(m=>{
     const time = new Date(m.created_at).toLocaleString('fr-FR',{weekday:'short',hour:'2-digit',minute:'2-digit'});
     return `<div class="msg-row ${m.expediteur}"><div class="msg-bubble">${m.contenu}</div><div class="msg-time">${time}</div></div>`;
   }).join('');
   log.scrollTop = log.scrollHeight;
 }
+
 document.getElementById('chatSend').addEventListener('click', sendMessage);
 document.getElementById('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendMessage(); });
 async function sendMessage(){
@@ -674,11 +822,31 @@ async function sendMessage(){
   if(!contenu) return;
   if(!dbReady){ showToast('Base non connectée.'); return; }
   if(!SEJOUR){ showToast('Aucun séjour actif.'); return; }
-  const { error } = await sb.from('relia_messages').insert({ sejour_id: SEJOUR.id, expediteur:'patient', contenu, service_nom: document.getElementById('chatServiceName').textContent });
+  if(!ACTIVE_SERVICE){ showToast('Réessayez depuis Poser une question.'); return; }
+  const { error } = await sb.from('relia_messages').insert({ sejour_id: SEJOUR.id, expediteur:'patient', contenu, service_nom: ACTIVE_SERVICE });
   if(error){ showToast('Erreur : '+error.message); return; }
+  const label = document.getElementById('chatServiceName').textContent;
   input.value='';
   await loadAll();
+  openThread(ACTIVE_SERVICE, label);
   showToast('Votre message a été transmis à l\'équipe. Réponse prévue sous 48h.');
+}
+
+/* ---------- Poser une question : sélection du besoin, routage invisible ---------- */
+document.getElementById('btnNewQuestion').addEventListener('click', openNeedModal);
+function openNeedModal(){
+  const grid = document.getElementById('needGrid');
+  grid.innerHTML = NEEDS.map(n=>`<button class="need-card" data-need="${n.key}"><span class="ic">${n.icon}</span>${n.label}</button>`).join('');
+  grid.querySelectorAll('.need-card').forEach(card=>{
+    card.addEventListener('click', ()=>{
+      const need = NEEDS.find(n=>n.key===card.dataset.need);
+      closeModal('modalNeed');
+      if(need.redirect){ goTo(need.redirect); return; }
+      const conv = CONVERSATION_MAP[need.service];
+      openThread(need.service, conv.label);
+    });
+  });
+  openModal('modalNeed');
 }
 
 /* ---------- Documents ---------- */
